@@ -14,7 +14,10 @@
 ‏    return response["bitcoin"]["usd"]
 ‏
 ‏def get_gold_price():
-‏    url = "https://metals-api.com/api/latest?access_key=ضع_المفتاح_هنا&base=USD&symbols=XAU"
+‏    url = "def get_gold_price():
+    url = "https://api.exchangerate.host/latest?base=USD&symbols=XAU"
+    response = requests.get(url).json()
+    return response["rates"]["XAU"]
 ‏    response = requests.get(url).json()
 ‏    return response["rates"]["XAU"]
 ‏
