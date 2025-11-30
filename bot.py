@@ -27,14 +27,19 @@
 ‏    return response["rates"]["EUR"]
 ‏
 ‏# ====== أوامر البوت ======
-‏async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-‏    await update.message.reply_text(
-‏        "👋 أهلاً بك!\n"
-‏        "الأوامر المتاحة:\n"
-‏        "/alert <asset> <price> → ضبط تنبيه\n"
-‏        "/alerts → عرض التنبيهات النشطة\n"
-‏        "/removealert <رقم> → حذف تنبيه\n"
-‏        "الأصول المدعومة: bitcoin, gold, forex\n"
+‏async def ,from telegram import ReplyKeyboardMarkup
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        ["/bitcoin", "/gold"],
+        ["/forex", "/alerts"],
+        ["/alert bitcoin 40000", "/removealert 1"]
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text(
+        "👋 أهلاً بك في WOLLFTRADING!\nاختر أمر من الأزرار أو اكتب يدويًا:",
+        reply_markup=reply_markup
+    ) gold, forex\n"
 ‏        "مثال: /alert bitcoin 40000"
 ‏    )
 ‏
