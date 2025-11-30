@@ -4,7 +4,7 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 # توكن البوت من BotFather
-TOKEN =lTOKEN = "8403763339:AAFuyHOTd7WWu8S1SwdqBk-X_wNAcneKN-I"
+TOKENTOKEN = "8403763339:AAFuyHOTd7WWu8S1SwdqBk-X_wNAcneKN-I"
 
 # قائمة لحفظ التنبيهات النشطة لكل مستخدم
 active_alerts = {}
