@@ -1,6 +1,6 @@
 services:
-  - type: web
-    name: telegram-bot
+  - type: worker
+    name: wolf-bot
     env: python
-    buildCommand: ""
-    startCommand: python bot.py
+    buildCommand: pip install -r requirements.txt
+    startCommand: python wolf_bot.py
