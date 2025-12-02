@@ -1,104 +1,107 @@
-import os
-import requests
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update
+from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
+from datetime import datetime, time
 
-# توكن البوت من BotFather
-TOKENTOKEN = "8403763339:AAFuyHOTd7WWu8S1SwdqBk-X_wNAcneKN-I"
+TOKEN = "8307293371:AAGkxpqlczCbjppphtVtivOEFmqAktUYFpU"
+ADMIN_ID = 8307293371
 
-# قائمة لحفظ التنبيهات النشطة لكل مستخدم
-active_alerts = {}
+last_replied = {}
+reply_index = {}
+welcomed_users = set()
+all_users = set()
 
-# ====== دوال جلب الأسعار ======
-def get_bitcoin_price():
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
-    response = requests.get(url).json()
-    return response["bitcoin"]["usd"]
+daily_message = (
+    "☀️ صباح الخير من وكالة ستار تريدر 🌟\n"
+    "━━━━━━━━━━━━━━━━━━━\n"
+    "📊 ملخص السوق اليوم:\n"
+    "🛢️ النفط: 82.45 دولار\n"
+    "💰 بيتكوين: 91,163.64 دولار\n"
+    "📈 آبل: 278.85 دولار\n\n"
+    "🚀 نتمنى لكم يوماً مليئاً بالنجاح والفرص!"
+)
 
-def get_gold_price():
-    url = "https://api.exchangerate.host/latest?base=USD&symbols=XAU"
-    response = requests.get(url).json()
-    return response["rates"]["XAU"]
+async def auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+    text = update.message.text.strip().lower()
+    now = datetime.now()
 
-def get_forex_price():
-    url = "https://api.exchangerate.host/latest?base=USD&symbols=EUR"
-    response = requests.get(url).json()
-    return response["rates"]["EUR"]
+    all_users.add(user_id)
 
-# ====== أوامر البوت ======
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        ["/bitcoin", "/gold"],
-        ["/forex", "/alerts"],
-        ["/alert bitcoin 40000", "/removealert 1"]
-    ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text(
-        "👋 أهلاً بك في WOLLFTRADING!\nاختر أمر من الأزرار أو اكتب يدويًا:",
-        reply_markup=reply_markup
-    )
+    if user_id not in welcomed_users:
+        welcome_text = (
+            "👋 أهلاً وسهلاً بك في وكالة ستار تريدر 🌟\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            "📌 نحن هنا لنرافقك في رحلتك الاستثمارية.\n"
+            "🚀 مع ستار تريدر، المستقبل بين يديك.\n\n"
+            "📋 أوامر البوت:\n"
+            "/oil - أسعار النفط 🛢️\n"
+            "/crypto - العملات الرقمية 💰\n"
+            "/stocks - الأسهم العالمية 📈\n"
+            "/indices - مؤشرات الأسواق 🌍\n"
+            "/news - الأخبار الاقتصادية 📰\n"
+            "/about - من نحن ℹ️\n"
+            "/privacy - سياسة الخصوصية 🔒\n"
+            "/education - تعليم التداول 🎓\n"
+            "/help - عرض الأوامر 📋"
+        )
+        await update.message.reply_text(welcome_text)
+        welcomed_users.add(user_id)
+        reply_index[user_id] = 0
+        last_replied[user_id] = now
+        return
 
-async def bitcoin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    price = get_bitcoin_price()
-    await update.message.reply_text(f"₿ سعر البيتكوين الحالي: {price} USD")
+    if text == "/start":
+        await update.message.reply_text("👋 أهلاً بك في بوت WOLFTRADING7 🌟")
+        return
 
-async def gold(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    price = get_gold_price()
-    await update.message.reply_text(f"💰 سعر الذهب الحالي: {price} USD")
+    if text == "/help":
+        await update.message.reply_text(
+            "📋 أوامر البوت:\n/oil\n/crypto\n/stocks\n/indices\n/news\n/about\n/privacy\n/education"
+        )
+        return
 
-async def forex(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    price = get_forex_price()
-    await update.message.reply_text(f"💱 سعر الدولار مقابل اليورو: {price}")
+    if text == "/oil":
+        await update.message.reply_text("🛢️ أسعار النفط:\nخام برنت: 82.45 دولار\nغرب تكساس: 78.30 دولار")
+        return
 
-async def alert(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        asset = context.args[0].lower()
-        target_price = float(context.args[1])
-        chat_id = update.effective_chat.id
+    if text == "/crypto":
+        await update.message.reply_text("💰 بيتكوين: 91,163.64 دولار\n🪙 إيثيريوم: 2,300 دولار")
+        return
 
-        if chat_id not in active_alerts:
-            active_alerts[chat_id] = []
-        active_alerts[chat_id].append({"asset": asset, "target": target_price})
+    if text == "/stocks":
+        await update.message.reply_text("📈 آبل: 278.85 دولار\n📉 تسلا: 245.10 دولار")
+        return
 
-        await update.message.reply_text(f"🔔 تم ضبط تنبيه {asset} عند {target_price}$")
-    except (IndexError, ValueError):
-        await update.message.reply_text("⚠️ استخدم الأمر بهذا الشكل: /alert bitcoin 40000")
+    if text == "/market":
+        await update.message.reply_text(
+            "📊 ملخص السوق الآن:\n🛢️ النفط: 82.45 دولار\n💰 بيتكوين: 91,163.64 دولار\n📈 آبل: 278.85 دولار"
+        )
+        return
 
-async def alerts(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    if chat_id not in active_alerts or len(active_alerts[chat_id]) == 0:
-        await update.message.reply_text("📭 لا توجد تنبيهات نشطة حالياً.")
-    else:
-        msg = "📋 التنبيهات النشطة:\n"
-        for i, alert in enumerate(active_alerts[chat_id], start=1):
-            msg += f"{i}. {alert['asset']} عند {alert['target']}$\n"
-        await update.message.reply_text(msg)
+    if text == "/users" and user_id == ADMIN_ID:
+        users_list = "\n".join([str(uid) for uid in all_users])
+        await update.message.reply_text(f"👥 المستخدمين:\n{users_list}")
+        return
 
-async def removealert(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    try:
-        index = int(context.args[0]) - 1
-        if chat_id in active_alerts and 0 <= index < len(active_alerts[chat_id]):
-            removed = active_alerts[chat_id].pop(index)
-            await update.message.reply_text(
-                f"🗑️ تم حذف التنبيه: {removed['asset']} عند {removed['target']}$"
-            )
-        else:
-            await update.message.reply_text("⚠️ رقم التنبيه غير صحيح.")
-    except (IndexError, ValueError):
-        await update.message.reply_text("⚠️ استخدم الأمر بهذا الشكل: /removealert 1")
+    if text.startswith("/broadcast") and user_id == ADMIN_ID:
+        msg = text.replace("/broadcast", "").strip()
+        for uid in all_users:
+            await context.bot.send_message(chat_id=uid, text=f"📢 رسالة من الإدارة:\n{msg}")
+        await update.message.reply_text("✅ تم الإرسال.")
+        return
 
-# ====== تشغيل البوت ======
-def main():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("bitcoin", bitcoin))
-    app.add_handler(CommandHandler("gold", gold))
-    app.add_handler(CommandHandler("forex", forex))
-    app.add_handler(CommandHandler("alert", alert))
-    app.add_handler(CommandHandler("alerts", alerts))
-    app.add_handler(CommandHandler("removealert", removealert))
-    app.run_polling()
+async def send_daily_message(context: ContextTypes.DEFAULT_TYPE):
+    for uid in all_users:
+        await context.bot.send_message(chat_id=uid, text=daily_message)
+
+async def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auto_reply))
+    app.job_queue.run_daily(send_daily_message, time=time(9, 0))
+
+    await app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
