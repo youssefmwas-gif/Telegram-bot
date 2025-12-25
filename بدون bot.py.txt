@@ -6,22 +6,20 @@ import time
 import random
 import json
 
-
-TOKEN = "8403763339:AAEy4RWJBxXIpln7X5lws_hDyCPOm0UBkfo" 
+# ✅ التوكن الجديد محدث
+TOKEN = "8403763339:AAH87KyBdZMl8H3l0mdUOwIgmptpqDouwYM"
 ADMIN_USERNAME = "@wolfoldd"
 
 bot = telebot.TeleBot(TOKEN)
 
-# قوائم البيانات
 PAIRS = {
     'eurusd': 'EUR/USD', 'gbpusd': 'GBP/USD', 'usdjpy': 'USD/JPY',
     'audusd': 'AUD/USD', 'usdcad': 'USD/CAD', 'gold': 'XAU/USD'
 }
 
-# مجموعات المشتركين
 subscribers = set()
 news_subscribers = set()
-analysis_subscribers = set()  # مشتركو التحليل اليومي
+analysis_subscribers = set()
 user_positions = {}
 
 @bot.message_handler(commands=['start'])
@@ -55,7 +53,6 @@ def analysis_menu(message):
 
 @bot.message_handler(commands=['daily_analysis'])
 def daily_analysis(message):
-    """عرض آخر تحليل الذهب والبيتكوين"""
     gold_analysis = get_gold_analysis()
     btc_analysis = get_btc_analysis()
     
@@ -73,11 +70,9 @@ def daily_analysis(message):
     bot.reply_to(message, analysis_text, parse_mode='Markdown')
 
 def get_gold_analysis():
-    """إنشاء تحليل ذهب تلقائي"""
     prices = get_gold_price()
     current_price = prices['current'] if prices else 2650.50
     
-    # تحليل مبني على السعر (تجريبي)
     if current_price > 2650:
         direction = "🟢 صعودي"
         target = f"{current_price + 15:.1f}"
@@ -93,14 +88,13 @@ def get_gold_analysis():
     
     return f"""
 💰 السعر الحالي: `{current_price:.2f}$`
-{trend_emoji(current_price)} الاتجاه: {direction}
+📈 الاتجاه: {direction}
 🎯 الهدف: {target}$
 🛡️ الدعم: {support}$
 📝 *الملاحظات*: {random.choice(['قوة شرائية عالية', 'ضغط بيعي', 'انتظار اختراق', 'حركة جانبية'])}
     """
 
 def get_btc_analysis():
-    """إنشاء تحليل بيتكوين تلقائي"""
     prices = get_btc_price()
     current_price = prices['current'] if prices else 98000
     
@@ -119,20 +113,13 @@ def get_btc_analysis():
     
     return f"""
 💰 السعر الحالي: `{current_price:.0f}$`
-{trend_emoji(current_price, is_btc=True)} الاتجاه: {direction}
+📈 الاتجاه: {direction}
 🎯 الهدف: {target}$
 🛡️ الدعم: {support}$
 📝 *الملاحظات*: {random.choice(['ضغط شراء من المؤسسات', 'تصريحات رئيس فيدرالي', 'حركة توزيع', 'انتظار قرار ETF'])}
     """
 
-def trend_emoji(price, is_btc=False):
-    """إرجاع إيموجي الاتجاه"""
-    if is_btc:
-        return "🚀" if price > 95000 else "📉" if price < 92000 else "➡️"
-    return "📈" if price > 2640 else "📉" if price < 2610 else "↔️"
-
 def get_gold_price():
-    """جلب سعر الذهب الحالي"""
     try:
         response = requests.get("https://api.metals.live/v1/spot/XAU", timeout=5)
         data = response.json()
@@ -141,7 +128,6 @@ def get_gold_price():
         return None
 
 def get_btc_price():
-    """جلب سعر البيتكوين"""
     try:
         response = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", timeout=5)
         data = response.json()
@@ -168,55 +154,74 @@ def analysis_status(message):
     status = "✅ مشترك" if user_id in analysis_subscribers else "❌ غير مشترك"
     bot.reply_to(message, f"حالة اشتراكك في التحليل اليومي: {status}")
 
-# وظائف الإرسال التلقائي
+@bot.message_handler(commands=['price'])
+def get_price(message):
+    try:
+        pair = message.text.split()[1].lower()
+        if pair == 'gold':
+            prices = get_gold_price()
+            rate = prices['current'] if prices else 2650
+            text = f"🪙 *XAU/USD*
+💰 `{rate:.2f}$`
+⏰ {datetime.now().strftime('%H:%M')}"
+        else:
+            text = f"💹 *{PAIRS.get(pair, pair).upper()}*
+💰 `1.12345`
+⏰ {datetime.now().strftime('%H:%M')}"
+        bot.reply_to(message, text, parse_mode='Markdown')
+    except:
+        bot.reply_to(message, "❌ استخدم: /price gold أو /price eurusd")
+
+@bot.message_handler(commands=['support'])
+def support(message):
+    bot.reply_to(message, f"""
+📞 *التواصل مع الإدارة*
+{ADMIN_USERNAME}
+
+أرسل رسالتك الآن وسيتم إرسالها للإدارة 👇
+    """, parse_mode='Markdown')
+    bot.register_next_step_handler(message, handle_support)
+
+def handle_support(message):
+    try:
+        support_text = f"""
+📩 *رسالة دعم جديدة*
+👤 {message.from_user.first_name}
+🆔 `{message.from_user.id}`
+📅 {datetime.now().strftime('%H:%M %d/%m')}
+💬 {message.text}
+        """
+        bot.send_message(ADMIN_USERNAME, support_text, parse_mode='Markdown')
+        bot.reply_to(message, "✅ تم إرسال رسالتك للإدارة!")
+    except:
+        bot.reply_to(message, "❌ خطأ في الإرسال")
+
+@bot.message_handler(commands=['help'])
+def help_cmd(message):
+    bot.reply_to(message, """
+🤖 *الأوامر المتاحة:*
+/start - البداية
+/analysis - قسم التحليل
+/price gold - سعر الذهب
+/daily_analysis - تحليل اليوم
+/subscribe_analysis - اشتراك يومي
+/support - التواصل مع الإدارة
+    """, parse_mode='Markdown')
+
 def send_daily_analysis():
-    """إرسال التحليل اليومي كل يوم الساعة 8 صباحاً"""
     while True:
         now = datetime.now()
-        # التحقق من الساعة 8 صباحاً
         if now.hour == 8 and now.minute == 0:
             if analysis_subscribers:
-                analysis = daily_analysis(None)  # تحليل كامل
+                analysis = daily_analysis(None)[1]  # استخراج النص
                 for user_id in list(analysis_subscribers):
                     try:
                         bot.send_message(user_id, analysis, parse_mode='Markdown')
                     except:
                         pass
-            time.sleep(3600)  # انتظار ساعة قبل التحقق مرة أخرى
-        else:
-            time.sleep(60)  # التحقق كل دقيقة
+        time.sleep(60)
 
-# تشغيل الخيوط في الخلفية
-analysis_thread = threading.Thread(target=send_daily_analysis, daemon=True)
-analysis_thread.start()
+threading.Thread(target=send_daily_analysis, daemon=True).start()
 
-# أقسام أخرى مختصرة (نفس الكود السابق)
-@bot.message_handler(commands=['trading', 'news', 'support', 'pairs', 'price'])
-def placeholder(message):
-    bot.reply_to(message, "تم تفعيل هذا القسم! استخدم /help للأوامر الكاملة.")
-
-@bot.message_handler(commands=['help'])
-def full_help(message):
-    help_text = """
-🤖 *جميع الأوامر المتاحة:*
-
-📈 *التداول:*
-/trading - قسم التداول
-/pairs - الأزواج
-/price gold - السعر الحالي
-
-📊 *التحليل:*
-/analysis - قسم التحليل
-/daily_analysis - آخر تحليل
-/subscribe_analysis - اشتراك يومي
-
-📰 *الأخبار والدعم:*
-/news - الأخبار
-/support - التواصل مع الإدارة
-    """
-    bot.reply_to(message, help_text, parse_mode='Markdown')
-
-if __name__ == "__main__":
-    print("🚀 بوت تداول الفوركس الاحترافي يعمل...")
-    print("📊 التحليل اليومي مفعّل | الإدارة:", ADMIN_USERNAME)
-    bot.infinity_polling()
+print("🚀 البوت يعمل بنجاح!")
+bot.infinity_polling()
